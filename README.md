@@ -3,8 +3,7 @@
 Sistem soft sensor untuk memprediksi 5 lokasi gempa berikutnya berdasarkan data historis. Proyek ini menggunakan model Machine Learning (Random Forest) dengan antarmuka yang dibangun menggunakan React.
 
 ## Tampilan Aplikasi (Screenshot)
-![Tampilan Aplikasi Prediksi Gempa](path/ke/screenshot.png)
-*(Catatan: Ganti `path/ke/screenshot.png` dengan path gambar tampilan aplikasi Anda setelah Anda menambahkannya ke proyek.)*
+![Tampilan Aplikasi Prediksi Gempa](./docs/tampilan-aplikasi.png)
 
 ---
 

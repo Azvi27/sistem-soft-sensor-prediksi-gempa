@@ -1,0 +1,59 @@
+# =================================================
+# 1. ABAIKAN DEPENDENSI & FILE SEMENTARA (Umum)
+# =================================================
+
+# Dependensi Node.js
+/node_modules
+
+# Cache dan hasil build Vite
+/.vite/
+/.vite-temp/
+/dist/
+
+# File log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# File environment (berisi kunci rahasia/API key)
+.env
+.env.local
+
+# Folder konfigurasi IDE
+.vscode/
+.idea/
+
+# =================================================
+# 2. ABAIKAN FILE DARI PROYEK PYTHON / MACHINE LEARNING
+# =================================================
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Cache Jupyter Notebook
+.ipynb_checkpoints/
+
+# File Model Machine Learning (*.pkl) - SANGAT PENTING
+# Ini yang menyebabkan unggahan Anda sebelumnya gagal.
+*.pkl
+
+# File Data CSV - Jika ukurannya besar
+*.csv
+
+# =================================================
+# 3. ABAIKAN FILE OUTPUT / LAPORAN YANG DI-GENERATE
+# =================================================
+
+# Mengabaikan semua file HTML dan PNG di dalam folder 'static'
+# karena isinya terlihat seperti hasil generate.
+Kelompok Teknologi sensor/static/*.html
+Kelompok Teknologi sensor/static/*.png
+
+# Mengabaikan laporan HTML dan plot PNG lain yang mungkin ada di luar folder static
+evaluasi_*.html
+evaluasi_*.png
+plot_*.png
+gempa_map.html
+prediksi_interaktif_*.html

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Prediksi Gempa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: rgba(43, 45, 66, 0.4);
+            --inner-card-bg: rgba(26, 26, 46, 0.5);
+            --text-color: #edf2f4;
+            --text-color-muted: rgba(237, 242, 244, 0.7);
+            --primary-color: #00aaff;
+            --secondary-color: #00e676;
+            --danger-color: #ff5252;
+            --border-color: rgba(141, 153, 174, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(135deg, var(--bg-color) 0%, #2b2d42 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .dashboard-layout { display: grid; grid-template-columns: 380px 1fr; gap: 25px; max-width: 1600px; margin: 0 auto; }
+        #controls-column { position: sticky; top: 20px; height: calc(100vh - 40px); overflow-y: auto; padding-right: 10px; }
+        #results-column { min-height: calc(100vh - 40px); }
+        header { text-align: center; padding-bottom: 20px; margin-bottom: 20px; animation: fadeIn 0.5s ease-out; grid-column: 1 / -1; }
+        header h1 { font-size: 2.5rem; color: var(--text-color); text-shadow: 0 0 10px rgba(0, 170, 255, 0.3); }
+
+        .section { background: var(--card-bg); border: 1px solid var(--border-color); padding: 25px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 8px 32px 0 var(--shadow-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: fadeIn 0.5s ease-out forwards; }
+        .section-title { margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-size: 1.5rem; margin-bottom: 20px; }
+        .sub-section-title { font-size: 1.2rem; color: var(--text-color); margin-top: 30px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
+        .sub-section-title:first-child { margin-top: 0; }
+
+        button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background-image: linear-gradient(to right, var(--primary-color), #00c6ff); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px 0 rgba(0, 170, 255, 0.3); margin-right: 10px; margin-top: 10px; width: 100%; }
+        .button-group { display: flex; gap: 10px; }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(0, 170, 255, 0.4); }
+        #evaluate-button { background-image: linear-gradient(to right, var(--secondary-color), #69f0ae); box-shadow: 0 4px 15px 0 rgba(0, 230, 118, 0.3); }
+        #train-button { background-image: linear-gradient(to right, #ff9100, #ffc247); box-shadow: 0 4px 15px 0 rgba(255, 145, 0, 0.3); }
+        button:disabled { background-image: none; background-color: rgba(141, 153, 174, 0.3); cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .full-width-input { grid-column: 1 / -1; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color-muted); }
+        input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--inner-card-bg); color: var(--text-color); font-size: 16px; transition: border-color 0.3s, box-shadow 0.3s; }
+        input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2); }
+
+        .status-text { font-weight: 500; padding: 8px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; }
+        .status-ready { color: #fff; background-color: rgba(0, 230, 118, 0.2); border: 1px solid var(--secondary-color); }
+        .status-not-ready, .status-training { color: #fff; background-color: rgba(255, 82, 82, 0.2); border: 1px solid var(--danger-color); }
+        .status-training { background-color: rgba(255, 145, 0, 0.2); border: 1px solid #ff9100; }
+
+        .prediction-list { list-style-type: none; padding: 0; }
+        .prediction-item { background-color: rgba(0, 170, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary-color); }
+        #evaluation-metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .metric-card { background-color: var(--inner-card-bg); padding: 20px; border-radius: 12px; border-left: 4px solid var(--secondary-color); }
+        .metric-card-title { font-size: 0.9rem; color: var(--text-color-muted); margin: 0 0 10px 0; }
+        .metric-card-value { font-size: 1.5rem; font-weight: 700; color: var(--text-color); margin: 0; }
+
+        iframe { width: 100%; height: 500px; border: 1px solid var(--border-color); border-radius: 12px; margin-top: 15px; background-color: rgba(255,255,255,0.05);}
+        .spinner { width: 20px; height: 20px; border-radius: 50%; border: 3px solid rgba(237, 242, 244, 0.2); border-top-color: var(--primary-color); animation: spin 1s linear infinite; display: none; margin-left: 10px; }
+        .error-message { color: var(--danger-color); margin-top: 15px; background-color: rgba(255, 82, 82, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--danger-color); }
+
+        .plots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .plot-card { background-color: var(--inner-card-bg); padding: 20px; border-radius: 12px; }
+        .plot-card.full-width { grid-column: 1 / -1; }
+        .plot-card img { max-width: 100%; border-radius: 8px; background-color: #fff; }
+        
+        .table-container { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border-color); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        th { background-color: rgba(0, 170, 255, 0.1); font-weight: 500; text-transform: capitalize; }
+        tbody tr:hover { background-color: rgba(0, 170, 255, 0.05); }
+
+        .tabs-nav { display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .tab-button { padding: 10px 20px; cursor: pointer; background: none; border: none; color: var(--text-color-muted); border-bottom: 3px solid transparent; font-size: 1rem; transition: all 0.3s ease; width: auto; margin-top: 0; }
+        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+        
+        @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } #controls-column { position: static; height: auto; } .plots-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <header><h1>Dashboard Prediksi Gempa</h1></header>
+        
+        <div id="controls-column">
+            <div class="section">
+                <h2 class="section-title">Kontrol Model</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <p style="margin:0;">Status Model: <span id="status-text" class="status-text">Menghubungi server...</span></p>
+                    <div id="loading-spinner" class="spinner"></div>
+                </div>
+                <small id="model-instructions" style="display: none; margin-top: 10px; color: var(--danger-color);">Model tidak ditemukan. Latih model terlebih dahulu.</small>
+                <div class="button-group">
+                    <button id="evaluate-button">Evaluasi</button>
+                    <button id="train-button">Latih Ulang</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Input Prediksi</h2>
+                <form id="prediction-form">
+                    <div class="input-group">
+                        <div><label for="lat">Latitude</label><input type="number" step="any" id="lat" name="lat" required></div>
+                        <div><label for="lon">Longitude</label><input type="number" step="any" id="lon" name="lon" required></div>
+                        <div><label for="depth">Kedalaman (km)</label><input type="number" step="any" id="depth" name="depth" required></div>
+                        <div><label for="mag">Magnitudo</label><input type="number" step="any" id="mag" name="mag" required></div>
+                    </div>
+                    <div class="full-width-input"><label for="datetime">Tanggal & Waktu</label><input type="text" id="datetime" name="datetime" required></div>
+                    <button type="submit" id="predict-button" style="margin-top: 15px;">Buat Prediksi</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="results-column">
+             <div class="tabs-nav">
+                <button class="tab-button active" data-tab="welcome">Selamat Datang</button>
+                <button class="tab-button" data-tab="evaluation">Hasil Evaluasi</button>
+                <button class="tab-button" data-tab="prediction">Hasil Prediksi</button>
+             </div>
+             <div class="tab-content-wrapper">
+                <div id="welcome-section" class="tab-content active" data-tab-content="welcome">
+                    <div class="section">
+                        <h2 class="section-title">Selamat Datang</h2>
+                        <p>Gunakan panel di kiri untuk melatih, mengevaluasi, atau membuat prediksi dengan model.</p>
+                    </div>
+                </div>
+                <div id="evaluation-tab-content" class="tab-content" data-tab-content="evaluation">
+                    <div class="section"><h2 class="section-title">Hasil Evaluasi Model</h2><div id="evaluation-results-container"></div></div>
+                </div>
+                <div id="prediction-tab-content" class="tab-content" data-tab-content="prediction">
+                    <div class="section">
+                        <h2 class="section-title">Hasil Prediksi</h2>
+                        <ul id="prediction-results-list" class="prediction-list"></ul>
+                        <h3 class="sub-section-title">Peta Jalur Prediksi</h3>
+                        <iframe id="results-map" title="Peta Prediksi"></iframe>
+                    </div>
+                </div>
+             </div>
+             <div id="error-container" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inisialisasi Flatpickr dengan perbaikan untuk masalah tampilan
+            flatpickr("#datetime", {
+                enableTime: true,
+                enableSeconds: true,
+                dateFormat: "Y-m-d H:i:S",
+                defaultDate: new Date(),
+                time_24hr: true,
+                appendTo: document.body // Ini mencegah kalender terpotong oleh container
+            });
+
+            const API_URL = ''; // Gunakan path relatif karena server berjalan di direktori yang sama
+            const statusTextEl = document.getElementById('status-text');
+            const trainButton = document.getElementById('train-button');
+            const evaluateButton = document.getElementById('evaluate-button');
+            const predictButton = document.getElementById('predict-button');
+            const predictionForm = document.getElementById('prediction-form');
+            const resultsList = document.getElementById('prediction-results-list');
+            const resultsMap = document.getElementById('results-map');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorContainer = document.getElementById('error-container');
+            const modelInstructions = document.getElementById('model-instructions');
+            const evaluationResultsContainer = document.getElementById('evaluation-results-container');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            let modelIsReady = false;
+
+            // Fungsi untuk menampilkan tab yang dipilih
+            const showTab = (tabName) => {
+                tabContents.forEach(content => content.classList.remove('active'));
+                tabButtons.forEach(button => button.classList.remove('active'));
+                document.querySelector(`.tab-content[data-tab-content="${tabName}"]`).classList.add('active');
+                document.querySelector(`.tab-button[data-tab="${tabName}"]`).classList.add('active');
+            };
+            
+            tabButtons.forEach(button => button.addEventListener('click', () => showTab(button.dataset.tab)));
+
+            // Fungsi untuk memperbarui status tombol dan spinner
+            const updateButtonStates = (loading, action = null) => {
+                loadingSpinner.style.display = loading ? 'inline-block' : 'none';
+                trainButton.disabled = loading;
+                evaluateButton.disabled = loading || !modelIsReady;
+                predictButton.disabled = loading || !modelIsReady;
+                if (loading && action === 'train') {
+                    statusTextEl.textContent = 'Sedang Melatih...';
+                    statusTextEl.className = 'status-text status-training';
+                }
+            };
+
+            // Fungsi untuk memperbarui teks status model
+            const updateStatusText = (ready, message) => {
+                modelIsReady = ready;
+                statusTextEl.textContent = message;
+                statusTextEl.className = `status-text ${ready ? 'status-ready' : 'status-not-ready'}`;
+                modelInstructions.style.display = ready ? 'none' : 'block';
+                updateButtonStates(false);
+            };
+            
+            // Fungsi untuk mengambil status model dari server
+            const fetchStatus = async () => {
+                try {
+                    const response = await fetch(`${API_URL}/status`);
+                    const data = await response.json();
+                    updateStatusText(data.ready, data.message);
+                } catch (err) { 
+                    updateStatusText(false, 'Gagal terhubung ke server');
+                }
+            };
+
+            // Fungsi untuk menampilkan hasil evaluasi di halaman
+            const displayEvaluationResults = (evaluationData) => {
+                const { metrics, plots, error_analysis } = evaluationData;
+                evaluationResultsContainer.innerHTML = ''; // Kosongkan hasil sebelumnya
+
+                // Tampilkan kartu metrik
+                let metricsHtml = '<h3 class="sub-section-title">Metrik Kinerja</h3><div id="evaluation-metrics-grid">';
+                const labelMap = { "mean_haversine_error_km": "Rata-rata Error Haversine", "median_haversine_error_km": "Median Error Haversine", "max_haversine_error_km": "Max Error Haversine", "mae_lat": "MAE Latitude", "rmse_lat": "RMSE Latitude", "mae_lon": "MAE Longitude", "rmse_lon": "RMSE Longitude", "mae_mag": "MAE Magnitudo", "rmse_mag": "RMSE Magnitudo", "mae_dep": "MAE Kedalaman", "rmse_dep": "RMSE Kedalaman" };
+                for (const key in labelMap) {
+                    if (metrics[key]) {
+                        metricsHtml += `<div class="metric-card"><h4 class="metric-card-title">${labelMap[key]}</h4><p class="metric-card-value">${metrics[key]}</p></div>`;
+                    }
+                }
+                metricsHtml += '</div>';
+                evaluationResultsContainer.innerHTML += metricsHtml;
+
+                // Tampilkan plot visualisasi
+                let plotsHtml = '<h3 class="sub-section-title">Visualisasi Plot</h3><div class="plots-grid">';
+                const plotTitles = { "depth_scatter": "Kedalaman: Aktual vs Prediksi", "magnitude_scatter": "Magnitudo: Aktual vs Prediksi", "haversine_distribution": "Distribusi Error Haversine" };
+                const plotOrder = ["depth_scatter", "magnitude_scatter", "haversine_distribution"];
+                plotOrder.forEach(key => {
+                    if (plots[key]) {
+                        const isFullWidth = key === 'haversine_distribution' ? 'full-width' : '';
+                        plotsHtml += `<div class="plot-card ${isFullWidth}"><h4>${plotTitles[key]}</h4><img src="${API_URL}${plots[key]}?t=${new Date().getTime()}" alt="${plotTitles[key]}"></div>`;
+                    }
+                });
+                plotsHtml += '</div>';
+                evaluationResultsContainer.innerHTML += plotsHtml;
+                
+                // Tampilkan peta evaluasi
+                evaluationResultsContainer.innerHTML += `<h3 class="sub-section-title">Peta Evaluasi</h3><iframe src="${API_URL}${plots.evaluation_map}?t=${new Date().getTime()}" title="Peta Evaluasi"></iframe>`;
+
+                // Tampilkan tabel analisis error
+                if(error_analysis && error_analysis.length > 0) {
+                    let tableHtml = '<h3 class="sub-section-title">Analisis Error Terbesar</h3><div class="table-container"><table><thead><tr>';
+                    Object.keys(error_analysis[0]).forEach(h => tableHtml += `<th>${h.replace(/_/g, ' ')}</th>`);
+                    tableHtml += '</tr></thead><tbody>';
+                    error_analysis.forEach(row => {
+                        tableHtml += '<tr>';
+                        Object.keys(row).forEach(h => tableHtml += `<td>${row[h]}</td>`);
+                        tableHtml += '</tr>';
+                    });
+                    tableHtml += '</tbody></table></div>';
+                    evaluationResultsContainer.innerHTML += tableHtml;
+                }
+                showTab('evaluation');
+            };
+
+            // Fungsi generik untuk menjalankan aksi (latih/evaluasi)
+            const runAction = async (endpoint, userConfirmMsg, actionName) => {
+                if (userConfirmMsg && !confirm(userConfirmMsg)) return;
+                updateButtonStates(true, actionName);
+                errorContainer.style.display = 'none';
+                try {
+                    const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST' });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message);
+                    alert(data.message); // Tampilkan pesan sukses dari server
+                    if (data.evaluation) displayEvaluationResults(data.evaluation);
+                } catch (err) {
+                    errorContainer.textContent = `Error: ${err.message}`;
+                    errorContainer.style.display = 'block';
+                } finally {
+                    fetchStatus(); // Selalu perbarui status setelah aksi selesai
+                }
+            };
+
+            // Tambahkan event listener untuk tombol
+            evaluateButton.addEventListener('click', () => runAction('/evaluate', null, 'evaluate'));
+            trainButton.addEventListener('click', () => runAction('/train', 'Proses pelatihan ulang bisa sangat lama. Anda yakin?', 'train'));
+
+            // Event listener untuk form prediksi
+            predictionForm.addEventListener('submit', async (e) => {
+                e.preventDefault(); 
+                updateButtonStates(true, 'predict');
+                errorContainer.style.display = 'none';
+                const formData = new FormData(predictionForm); 
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch(`${API_URL}/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                    const result = await response.json(); 
+                    if (!response.ok) throw new Error(result.message);
+                    
+                    resultsList.innerHTML = '';
+                    result.predictions.forEach((p, index) => {
+                        const li = document.createElement('li'); 
+                        li.className = 'prediction-item';
+                        li.innerHTML = `<strong>Prediksi ${index + 1}:</strong> Lat: ${p.lat.toFixed(4)}, Lon: ${p.lon.toFixed(4)}, Kedalaman: ${p.depth.toFixed(1)} km, Magnitudo: ${p.mag.toFixed(1)}`;
+                        resultsList.appendChild(li);
+                    });
+                    resultsMap.src = `${API_URL}${result.map_url}?t=${new Date().getTime()}`; // Tambahkan cache-busting
+                    showTab('prediction');
+                } catch (err) { 
+                    errorContainer.textContent = `Error: ${err.message}`; 
+                    errorContainer.style.display = 'block'; 
+                } finally { 
+                    updateButtonStates(false);
+                }
+            });
+
+            // Cek status awal saat halaman dimuat
+            fetchStatus();
+        });
+    </script>
+</body>
+</html>
